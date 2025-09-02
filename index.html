@@ -1,1 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Muse's Journey</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Georgia', serif;
+            color: #fff;
+            background: #1a0d2b;
+        }
+        #app {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: none;
+        }
+        .scene {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: none;
+            opacity: 0;
+            z-index: 1;
+        }
+        .scene.active {
+            display: block;
+            z-index: 2;
+        }
+        .text-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            max-width: 80%;
+            font-size: 2.2rem;
+            font-family: 'Great Vibes', cursive;
+            color: #f5e6cc;
+            text-shadow: 0 0 15px rgba(255, 153, 204, 0.8);
+            z-index: 10;
+        }
+        .text-container.envelope-text {
+            font-size: 2.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 20px rgba(255, 153, 204, 1);
+            background: rgba(26, 13, 43, 0.5);
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+        .text-container p {
+            opacity: 0;
+            margin: 15px 0;
+            position: relative;
+        }
+        .text-container p::after {
+            content: '✨';
+            position: absolute;
+            top: -10px;
+            right: -25px;
+            font-size: 1.2rem;
+            opacity: 0;
+            animation: sparkle 1.8s infinite alternate;
+        }
+        @keyframes sparkle {
+            to { opacity: 1; transform: scale(1.2) rotate(15deg); }
+        }
+        .continue-btn {
+            position: absolute;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 35px;
+            background: linear-gradient(45deg, #ff99cc, #ffccff);
+            border: 3px solid #f5e6cc;
+            border-radius: 25px;
+            font-family: 'Arial', sans-serif;
+            font-size: 1.2rem;
+            color: #4a2e4a;
+            cursor: pointer;
+            opacity: 0;
+            box-shadow: 0 0 20px rgba(255, 153, 204, 0.6);
+            z-index: 20;
+            pointer-events: auto;
+        }
+        .continue-btn:hover {
+            background: linear-gradient(45deg, #ffccff, #ff99cc);
+            transform: translateX(-50%) scale(1.05);
+        }
+        .envelope {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 260px;
+            height: 160px;
+            background: linear-gradient(to bottom, #f5e6cc, #f0d8a8);
+            border: 4px solid #ff99cc;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(255, 153, 204, 0.7);
+            z-index: 10;
+        }
+        .envelope::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: 80px;
+            background: linear-gradient(to bottom, #f5e6cc, #f0d8a8);
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+            border-bottom: 4px solid #ff99cc;
+            z-index: 1;
+            transition: transform 0.6s;
+        }
+        .envelope.open::before {
+            transform: rotateX(180deg);
+            transform-origin: bottom;
+        }
+        .envelope::after {
+            content: '🌸';
+            position: absolute;
+            top: 70%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.8rem;
+            color: #ff69b4;
+            z-index: 2;
+        }
+        .letter {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 85%;
+            max-width: 720px;
+            padding: 45px;
+            background: linear-gradient(to bottom, #fff0f5, #f5e6cc);
+            color: #4a2e4a;
+            font-family: 'Great Vibes', cursive;
+            font-size: 1.5rem;
+            line-height: 2;
+            box-shadow: 0 0 40px rgba(255, 153, 204, 0.6);
+            border: 4px solid #ff99cc;
+            border-radius: 15px;
+            opacity: 0;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 10;
+        }
+        .letter p {
+            margin: 20px 0;
+            opacity: 0;
+        }
+        .letter p::first-letter {
+            font-size: 2.8rem;
+            color: #ff69b4;
+            float: left;
+            margin-right: 10px;
+            line-height: 1;
+        }
+        .letter p:last-child::after {
+            content: '✨';
+            font-size: 1.8rem;
+            margin-left: 15px;
+        }
+        .volume-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px;
+            background: rgba(255, 153, 204, 0.5);
+            border: 2px solid #ff99cc;
+            border-radius: 8px;
+            color: #f5e6cc;
+            cursor: pointer;
+            font-size: 1.2rem;
+            z-index: 1000;
+            pointer-events: auto;
+        }
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .firefly {
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle, #ffd700, transparent);
+            border-radius: 50%;
+            box-shadow: 0 0 15px #ffd700;
+        }
+        .leaf {
+            width: 30px;
+            height: 15px;
+            background: linear-gradient(45deg, #ff99cc, #ffccff);
+            clip-path: ellipse(50% 50% at 50% 50%);
+            transform-origin: center;
+        }
+        .butterfly {
+            width: 40px;
+            height: 30px;
+            background: linear-gradient(45deg, #ff69b4, #ffb6c1);
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+            transform-origin: center;
+        }
+        .poem {
+            width: 45px;
+            height: 65px;
+            background: #f5e6cc;
+            border: 2px solid #ff99cc;
+            border-radius: 5px;
+            transform: rotate(10deg);
+        }
+        .star-particle {
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.8), transparent);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+        .background-forest {
+            background: linear-gradient(to bottom, #2e1e4a, #4a7043);
+        }
+        .background-forest::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 20%, rgba(255, 153, 204, 0.2), transparent 60%);
+        }
+        .trees {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60%;
+            background: repeating-linear-gradient(45deg, #4a2e4a, #4a2e4a 10px, #3b1f3b 10px, #3b1f3b 20px);
+            clip-path: polygon(0 100%, 10% 80%, 20% 90%, 30% 75%, 40% 85%, 50% 70%, 60% 80%, 70% 75%, 80% 85%, 90% 70%, 100% 100%);
+            opacity: 0.9;
+        }
+        .brook {
+            position: absolute;
+            bottom: 10%;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background: linear-gradient(to right, #87ceeb, #b0e0e6);
+            animation: ripple 2s infinite;
+            box-shadow: 0 0 10px rgba(135, 206, 235, 0.6);
+        }
+        @keyframes ripple {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-20px); }
+        }
+        .journal {
+            position: absolute;
+            bottom: 25%;
+            left: 20%;
+            width: 90px;
+            height: 55px;
+            background: linear-gradient(to bottom, #8b5a2b, #a0522d);
+            border: 3px solid #ff99cc;
+            border-radius: 5px;
+            transform: rotate(-10deg);
+            box-shadow: 0 0 10px rgba(255, 153, 204, 0.5);
+            z-index: 5;
+        }
+        .pen {
+            position: absolute;
+            bottom: 28%;
+            left: 25%;
+            width: 45px;
+            height: 5px;
+            background: #ffd700;
+            border-radius: 3px;
+            transform: rotate(40deg);
+            transform-origin: left;
+            box-shadow: 0 0 8px #ffd700;
+            z-index: 5;
+        }
+        .manuscripts {
+            position: absolute;
+            bottom: 25%;
+            right: 20%;
+            width: 85px;
+            height: 95px;
+            background: linear-gradient(to bottom, #f5e6cc, #f0d8a8);
+            border: 3px solid #ff99cc;
+            border-radius: 5px;
+            transform: rotate(5deg);
+            box-shadow: 0 0 10px rgba(255, 153, 204, 0.5);
+            z-index: 5;
+        }
+        .background-clearing {
+            background: linear-gradient(to bottom, #4a7043, #74c69d);
+        }
+        .background-edge {
+            background: linear-gradient(to bottom, #74c69d, #95d5b2);
+        }
+        .background-world {
+            background: linear-gradient(to bottom, #95d5b2, #b7e4c7);
+        }
+        .background-world::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 35%;
+            background: linear-gradient(to bottom, transparent, #fff0f5);
+        }
+        .background-stars {
+            background: #1a0d2b;
+        }
+        .background-letter {
+            background: linear-gradient(to bottom, #fff0f5, #f5e6cc);
+        }
+        .start-notice {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: rgba(26, 13, 43, 0.95);
+            color: #f5e6cc;
+            text-align: center;
+            font-size: 1.8rem;
+            font-family: 'Great Vibes', cursive;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+        .start-notice p {
+            margin: 15px 0;
+        }
+        .start-btn {
+            padding: 15px 35px;
+            background: linear-gradient(45deg, #ff99cc, #ffccff);
+            border: 3px solid #f5e6cc;
+            border-radius: 25px;
+            font-family: 'Arial', sans-serif;
+            font-size: 1.2rem;
+            color: #4a2e4a;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(255, 153, 204, 0.6);
+            transition: transform 0.3s;
+        }
+        .start-btn:hover {
+            background: linear-gradient(45deg, #ffccff, #ff99cc);
+            transform: scale(1.05);
+        }
+        @media (max-width: 768px) {
+            .text-container {
+                font-size: 1.4rem;
+                max-width: 90%;
+            }
+            .text-container.envelope-text {
+                font-size: 1.8rem;
+            }
+            .continue-btn {
+                font-size: 1rem;
+                padding: 12px 25px;
+            }
+            .envelope {
+                width: 200px;
+                height: 120px;
+            }
+            .letter {
+                font-size: 1.3rem;
+                width: 90%;
+                padding: 30px;
+            }
+            .journal, .manuscripts {
+                width: 70px;
+                height: 40px;
+            }
+            .pen {
+                width: 30px;
+            }
+            .firefly, .star-particle {
+                width: 8px;
+                height: 8px;
+            }
+            .leaf {
+                width: 20px;
+                height: 10px;
+            }
+            .butterfly {
+                width: 30px;
+                height: 20px;
+            }
+            .poem {
+                width: 35px;
+                height: 50px;
+            }
+            .start-notice {
+                font-size: 1.2rem;
+            }
+            .start-btn {
+                font-size: 1rem;
+                padding: 12px 25px;
+            }
+            @media (orientation: landscape) {
+                .start-notice {
+                    display: none;
+                }
+                #app {
+                    display: block;
+                }
+            }
+        }
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .text-container {
+                font-size: 1.8rem;
+            }
+            .text-container.envelope-text {
+                font-size: 2.2rem;
+            }
+            .continue-btn {
+                font-size: 1.1rem;
+            }
+            .envelope {
+                width: 230px;
+                height: 140px;
+            }
+            .letter {
+                font-size: 1.4rem;
+            }
+            .start-notice {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Georgia&family=Arial&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body>
+    <div class="start-notice" id="start-notice">
+        <p>Rotate your device to landscape mode for a magical experience.</p>
+        <p>Turn up the volume or use one headphone.</p>
+        <p>Click Begin to start your journey! ✨</p>
+        <button class="start-btn" id="start-btn">Begin</button>
+    </div>
+    <div id="app">
+        <button class="volume-toggle" id="volume-toggle">🔊</button>
+        <div id="scene1" class="scene background-forest">
+            <div class="trees"></div>
+            <div class="brook"></div>
+            <div class="journal"></div>
+            <div class="pen"></div>
+            <div class="text-container">
+                <p>In a forest enchanted, two sisters reigned...</p>
+                <p>Princesses of light, their beauty untamed...</p>
+            </div>
+            <button class="continue-btn">Continue</button>
+        </div>
+        <div id="scene2" class="scene background-clearing">
+            <div class="trees"></div>
+            <div class="manuscripts"></div>
+            <div class="text-container">
+                <p>Their laughter like sunshine, their songs ever bright...</p>
+                <p>They banished the shadows, brought joy to the night...</p>
+            </div>
+            <button class="continue-btn">Continue</button>
+        </div>
+        <div id="scene3" class="scene background-edge">
+            <div class="trees"></div>
+            <div class="text-container">
+                <p>But one day, her sister vanished from sight...</p>
+                <p>The Muse’s heart dimmed, lost in the night...</p>
+                <p>Sadness crept in, a heavy, dark veil...</p>
+            </div>
+            <button class="continue-btn">Continue</button>
+        </div>
+        <div id="scene4" class="scene background-edge">
+            <div class="trees"></div>
+            <div class="text-container">
+                <p>Yet the Muse vowed to honor her sister’s sweet grace...</p>
+                <p>Guarding her memory in love’s sacred space...</p>
+                <p>With courage, she walked, though her heart bore the cost...</p>
+            </div>
+            <button class="continue-btn">Continue</button>
+        </div>
+        <div id="scene5" class="scene background-world">
+            <div class="text-container">
+                <p>In a castle of dreams, new friends she did meet...</p>
+                <p>Her spirit grew strong, though trials weren’t sweet...</p>
+                <p>With companions and love, her sister’s light glowed...</p>
+            </div>
+            <button class="continue-btn">Continue</button>
+        </div>
+        <div id="envelope-scene" class="scene background-stars">
+            <div class="text-container envelope-text" style="top: 30%;">
+                <p>A special letter waits for you...</p>
+            </div>
+            <div class="envelope"></div>
+        </div>
+        <div id="letter-scene" class="scene background-letter">
+            <div class="letter">
+                <p>Dear Radiant Muse,</p>
+                <p>You are a princess, so beautiful and bright, your talent a beacon that lights up the night. Like the Muse in our tale, you’ve shone through the years, your laughter and grace a melody clear.</p>
+                <p>Your sister, your light, though she’s gone from your side, remains in your heart, her love as your guide. Every step you take honors her memory, a treasure you carry with unwavering bravery.</p>
+                <p>In this castle of learning, you’ve found a new home, with friends and companions who’ll never let you roam alone. Some days bring struggle, when the weight feels too much, but you rise, sweet Muse, with your resilient touch.</p>
+                <p>I’m here by your side, as are all who adore you. When you falter or tire, we’re here to restore you. Just whisper your need, and we’ll lift you to stand, your sister’s light with us, her spirit at hand.</p>
+                <p>Never give up, for your spark is a flame. Your journey’s just started, the world calls your name. You are never alone, with love all around.</p>
+                <p>Forever your friend, cheering you on,</p>
+                <p>Your Faithful Companion</p>
+            </div>
+        </div>
+    </div>
+    <audio id="track1" loop>
+        <source src="./Fairy Lands.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="track2">
+        <source src="./LS1.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="track3">
+        <source src="./LS2.mp3" type="audio/mpeg">
+    </audio>
+    <script>
+        const scenes = ['scene1', 'scene2', 'scene3', 'scene4', 'scene5', 'en
 
+System: velope-scene', 'letter-scene'];
+        let currentSceneIndex = 0;
+        const audioTracks = [
+            document.getElementById('track1'), // Fairy Lands.mp3
+            document.getElementById('track2'), // LS1.mp3
+            document.getElementById('track3')  // LS2.mp3
+        ];
+        let audioPlaying = true;
+        let hasInteracted = false;
+        const LS1_DURATION = 10; // Duration for LS1.mp3 in envelope scene
+
+        function createFireflies(scene, count) {
+            for (let i = 0; i < count; i++) {
+                const firefly = document.createElement('div');
+                firefly.className = 'particle firefly';
+                firefly.style.left = `${Math.random() * 100}%`;
+                firefly.style.top = `${Math.random() * 100}%`;
+                scene.appendChild(firefly);
+                gsap.to(firefly, {
+                    x: Math.random() * 100 - 50,
+                    y: Math.random() * 100 - 50,
+                    opacity: Math.random() * 0.5 + 0.5,
+                    duration: 2 + Math.random() * 2,
+                    repeat: -1,
+                    yoyo: true,
+                    ease: 'sine.inOut'
+                });
+            }
+        }
+
+        function createLeaves(scene, count) {
+            for (let i = 0; i < count; i++) {
+                const leaf = document.createElement('div');
+                leaf.className = 'particle leaf';
+                leaf.style.left = `${Math.random() * 100}%`;
+                leaf.style.top = '-20px';
+                scene.appendChild(leaf);
+                gsap.to(leaf, {
+                    y: '110vh',
+                    x: Math.random() * 60 - 30,
+                    rotation: Math.random() * 360,
+                    duration: 5 + Math.random() * 3,
+                    repeat: -1,
+                    delay: Math.random() * 2,
+                    ease: 'power1.in'
+                });
+            }
+        }
+
+        function createButterflies(scene, count) {
+            for (let i = 0; i < count; i++) {
+                const butterfly = document.createElement('div');
+                butterfly.className = 'particle butterfly';
+                butterfly.style.left = `${Math.random() * 100}%`;
+                butterfly.style.top = `${Math.random() * 100}%`;
+                scene.appendChild(butterfly);
+                gsap.to(butterfly, {
+                    x: Math.random() * 200 - 100,
+                    y: Math.random() * 200 - 100,
+                    rotation: Math.random() * 60 - 30,
+                    duration: 4 + Math.random() * 2,
+                    repeat: -1,
+                    yoyo: true,
+                    ease: 'sine.inOut'
+                });
+            }
+        }
+
+        function createPoems(scene, count) {
+            for (let i = 0; i < count; i++) {
+                const poem = document.createElement('div');
+                poem.className = 'particle poem';
+                poem.style.left = `${Math.random() * 100}%`;
+                poem.style.top = `${Math.random() * 100}%`;
+                scene.appendChild(poem);
+                gsap.to(poem, {
+                    y: -80,
+                    rotation: Math.random() * 160 - 80,
+                    duration: 3 + Math.random() * 2,
+                    repeat: -1,
+                    delay: Math.random() * 2,
+                    ease: 'power1.out',
+                    onRepeat: () => {
+                        poem.style.left = `${Math.random() * 100}%`;
+                        poem.style.top = '100%';
+                    }
+                });
+            }
+        }
+
+        function createStarParticles(scene, count) {
+            for (let i = 0; i < count; i++) {
+                const star = document.createElement('div');
+                star.className = 'particle star-particle';
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                scene.appendChild(star);
+                gsap.to(star, {
+                    opacity: Math.random() * 0.3 + 0.5,
+                    scale: Math.random() * 0.5 + 0.8,
+                    duration: 1.5 + Math.random() * 1.5,
+                    repeat: -1,
+                    yoyo: true,
+                    ease: 'sine.inOut'
+                });
+            }
+        }
+
+        function clearScene(scene) {
+            scene.querySelectorAll('.particle').forEach(el => el.remove());
+            const texts = scene.querySelectorAll('.text-container p');
+            texts.forEach(text => {
+                gsap.set(text, { opacity: 0, y: 30 });
+                text.style.display = 'none';
+            });
+            const continueBtn = scene.querySelector('.continue-btn');
+            if (continueBtn) {
+                gsap.set(continueBtn, { opacity: 0, scale: 1 });
+                continueBtn.style.display = 'none';
+                continueBtn.style.pointerEvents = 'none';
+            }
+            const envelope = scene.querySelector('.envelope');
+            if (envelope) {
+                envelope.classList.remove('open');
+                gsap.set(envelope, { opacity: 1, scale: 1, rotation: 0 });
+                envelope.style.display = 'none';
+            }
+            const letter = scene.querySelector('.letter');
+            if (letter) {
+                gsap.set(letter, { opacity: 0, scale: 0 });
+                const letterPs = letter.querySelectorAll('p');
+                gsap.set(letterPs, { opacity: 0, y: 30 });
+                letter.style.display = 'none';
+            }
+            gsap.killTweensOf(scene.querySelectorAll('*'));
+        }
+
+        function fadeOutAudio(audio, duration, callback) {
+            const startVolume = audio.volume;
+            gsap.to(audio, {
+                volume: 0,
+                duration: duration,
+                ease: 'linear',
+                onComplete: () => {
+                    audio.pause();
+                    audio.volume = startVolume; // Reset volume for future plays
+                    if (callback) callback();
+                }
+            });
+        }
+
+        function initScene(index) {
+            const scene = document.getElementById(scenes[index]);
+            const prevScene = index > 0 ? document.getElementById(scenes[index - 1]) : null;
+            const texts = scene.querySelectorAll('.text-container p');
+            const continueBtn = scene.querySelector('.continue-btn');
+            const envelope = scene.querySelector('.envelope');
+            const letter = scene.querySelector('.letter');
+
+            if (prevScene) {
+                clearScene(prevScene);
+                gsap.to(prevScene, {
+                    opacity: 0,
+                    duration: 1,
+                    onComplete: () => {
+                        prevScene.classList.remove('active');
+                        prevScene.style.display = 'none';
+                    }
+                });
+            }
+
+            scene.style.display = 'block';
+            scene.classList.add('active');
+            gsap.to(scene, { opacity: 1, duration: 1 });
+
+            texts.forEach(text => text.style.display = 'block');
+            if (continueBtn) {
+                continueBtn.style.display = 'block';
+                continueBtn.style.pointerEvents = 'auto';
+            }
+            if (envelope) {
+                envelope.style.display = 'block';
+            }
+            if (letter) {
+                letter.style.display = 'block';
+            }
+
+            if (index === 0) {
+                createFireflies(scene, 20);
+                createLeaves(scene, 10);
+                const pen = scene.querySelector('.pen');
+                gsap.to(pen, { rotation: 45, duration: 1, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+                if (hasInteracted && audioPlaying) {
+                    audioTracks[0].playbackRate = 1.5;
+                    audioTracks[0].play().catch(error => {
+                        console.log('Audio play failed:', error);
+                    });
+                }
+            } else if (index === 1) {
+                createButterflies(scene, 15);
+                const manuscripts = scene.querySelector('.manuscripts');
+                gsap.to(manuscripts, { height: 110, duration: 2, repeat: -1, yoyo: true, ease: 'power2.inOut' });
+            } else if (index === 2) {
+                createLeaves(scene, 15);
+                createFireflies(scene, 10);
+            } else if (index === 3) {
+                createButterflies(scene, 10);
+                createLeaves(scene, 8);
+            } else if (index === 4) {
+                createButterflies(scene, 20);
+                createPoems(scene, 8);
+            } else if (index === 5) {
+                createStarParticles(scene, 10);
+                const envelopeText = scene.querySelector('.text-container p');
+                gsap.to(envelopeText, { opacity: 1, y: -20, duration: 1.8, delay: 0.75, ease: 'power2.out' });
+                gsap.to(envelope, { y: -10, duration: 4.5, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+                if (audioPlaying) {
+                    fadeOutAudio(audioTracks[0], 1, () => {
+                        audioTracks[1].play();
+                    });
+                } else {
+                    audioTracks[0].pause();
+                }
+                setTimeout(() => {
+                    if (currentSceneIndex === 5) openEnvelope();
+                }, LS1_DURATION * 1000);
+            } else if (index === 6) {
+                createFireflies(scene, 8);
+                gsap.to(letter, { opacity: 1, scale: 1, duration: 1.5, delay: 0.75, ease: 'elastic.out(1, 0.5)' });
+                const letterPs = letter.querySelectorAll('p');
+                gsap.to(letterPs, { opacity: 1, y: 0, stagger: 0.3, duration: 1.5, delay: 1.5 });
+            }
+
+            if (texts.length > 0 && index !== 6) {
+                gsap.to(texts, {
+                    opacity: 1,
+                    y: -20,
+                    stagger: 2.25,
+                    duration: 1.8,
+                    delay: 0.75,
+                    ease: 'power2.out',
+                    onComplete: () => {
+                        if (continueBtn) {
+                            gsap.to(continueBtn, { opacity: 1, scale: 1.05, duration: 1, ease: 'elastic.out(1, 0.5)' });
+                            continueBtn.style.pointerEvents = 'auto';
+                        }
+                    }
+                });
+            }
+        }
+
+        function openEnvelope() {
+            const envelope = document.querySelector('.envelope');
+            envelope.classList.add('open');
+            gsap.to(envelope, {
+                scale: 0.9,
+                opacity: 0,
+                duration: 1.8,
+                ease: 'power2.in',
+                onComplete: () => {
+                    audioTracks[1].pause();
+                    if (audioPlaying) audioTracks[2].play();
+                    currentSceneIndex = 6;
+                    initScene(6);
+                }
+            });
+        }
+
+        function nextScene() {
+            if (currentSceneIndex < scenes.length - 2) {
+                currentSceneIndex++;
+                initScene(currentSceneIndex);
+            }
+        }
+
+        function toggleAudio() {
+            audioPlaying = !audioPlaying;
+            audioTracks.forEach(track => {
+                track.muted = !audioPlaying;
+                if (audioPlaying) {
+                    if (currentSceneIndex < 5 && track === audioTracks[0]) {
+                        track.playbackRate = 1.5;
+                        track.play();
+                    }
+                    else if (currentSceneIndex === 5 && track === audioTracks[1]) track.play();
+                    else if (currentSceneIndex === 6 && track === audioTracks[2]) track.play();
+                }
+            });
+            document.getElementById('volume-toggle').textContent = audioPlaying ? '🔊' : '🔇';
+        }
+
+        function handleFirstInteraction() {
+            if (!hasInteracted) {
+                hasInteracted = true;
+                document.getElementById('start-notice').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                if (audioPlaying && currentSceneIndex === 0) {
+                    audioTracks[0].playbackRate = 1.5;
+                    audioTracks[0].play().catch(error => {
+                        console.log('Audio play failed:', error);
+                    });
+                }
+                initScene(0);
+                document.getElementById('start-btn').removeEventListener('click', handleFirstInteraction);
+                document.removeEventListener('click', handleFirstInteraction);
+                document.removeEventListener('touchstart', handleFirstInteraction);
+            }
+        }
+
+        function setupEventListeners() {
+            document.querySelectorAll('.continue-btn').forEach((btn, index) => {
+                btn.addEventListener('click', () => {
+                    if (index + 1 <= currentSceneIndex + 1) {
+                        nextScene();
+                    }
+                });
+            });
+            document.getElementById('volume-toggle').addEventListener('click', toggleAudio);
+            document.getElementById('start-btn').addEventListener('click', handleFirstInteraction);
+            document.addEventListener('click', handleFirstInteraction);
+            document.addEventListener('touchstart', handleFirstInteraction);
+        }
+
+        setupEventListeners();
+
+        let touchStartX = 0;
+        let touchEndX = 0;
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        document.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            if (touchStartX - touchEndX > 50 && currentSceneIndex < scenes.length - 2) {
+                const continueBtn = document.getElementById(scenes[currentSceneIndex]).querySelector('.continue-btn');
+                if (continueBtn && gsap.getProperty(continueBtn, 'opacity') === 1) {
+                    nextScene();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
